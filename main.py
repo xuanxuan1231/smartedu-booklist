@@ -6,23 +6,25 @@ import requests, json
 from datetime import datetime
 from loguru import logger
 
+logger.add("logs/{time}.log")
+
 FILE_SERVER = "1"
 
 data = requests.get(f"https://s-file-{FILE_SERVER}.ykt.cbern.com.cn/zxx/ndrs/tags/tch_material_tag.json").json()
 logger.success("获取分类数据")
 
 tag_data = []
-for part in range(100, 102):
+for part in range(100, 104):
     tag_data += requests.get(
         f"https://s-file-{FILE_SERVER}.ykt.cbern.com.cn/zxx/ndrs/resources/tch_material/part_{part}.json"
     ).json()
     logger.debug(f"获取课本数据分片 {part%100}")
-tag_data = tag_data[:-10] # 把教师用书的视频扔了
+# tag_data = tag_data[:-10] # 把教师用书的视频扔了 当我他妈没说 什么狗屎排序
 logger.success("获取课本数据")
 
 periods = data["hierarchies"][0]["children"][0]["hierarchies"][0]["children"]
 
-for period in periods[:-2]: # 不处理高中和特殊教育的数据
+for period in periods[:-4]: # 不处理高中和特殊教育的数据
     name = period["tag_name"]
     period_id = period["tag_id"]
     logger.debug(f"正在遍历学段 {name}。ID: {period_id}")
@@ -54,8 +56,22 @@ for period in periods[:-2]: # 不处理高中和特殊教育的数据
                 logger.debug(f"正在遍历年级 {grade_data['name']}。ID: {grade_id}")
                 books = []
                 for book in tag_data:
-                    if f"{subject_id}/{version_id}/{grade_id}" in book["tag_paths"][0]:
-                        preview_url = list(book["custom_properties"]["preview"].items())[0][-1]
+                    if "tag_paths" not in book.keys():
+                        continue
+                    if book["tag_paths"] == []:
+                        continue
+                    if f"{period_id}/{subject_id}/{version_id}/{grade_id}" in book["tag_paths"][0]:
+                        if "preview" in book["custom_properties"].keys():
+                            preview_url = list(book["custom_properties"]["preview"].items())[0][-1]
+                        elif "thumbnails" in book["custom_properties"].keys():
+                            # 为什么还有他妈thumbnails啊
+                            preview_url = book["custom_properties"]["thumbnails"][0]
+                            if "zh-CN/" not in preview_url:
+                                # 去死吧为什么thumbnail还有不一样的
+                                continue
+                        else:
+                            # 俩都没有那就去死吧
+                            continue
                         # 取zh-CN和transcode之间的number
                         start_index = preview_url.find("zh-CN/") + len("zh-CN/")
                         end_index = preview_url.find("/transcode")
@@ -79,8 +95,12 @@ for period in periods[:-2]: # 不处理高中和特殊教育的数据
     #break
     if name == "小学":
         filename = "primary.json"
+    elif name == "小学（五·四学制）":
+        filename = "primary54.json"
     elif name == "初中":
         filename = "junior.json"
+    elif name == "初中（五·四学制）":
+        filename = "junior54.json"
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(final_data, f, ensure_ascii=False, indent=4)
     logger.success(f"已写入文件 {filename}")

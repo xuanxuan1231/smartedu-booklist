@@ -55,9 +55,14 @@ for period in periods[:-2]: # 不处理高中和特殊教育的数据
                 books = []
                 for book in tag_data:
                     if f"{subject_id}/{version_id}/{grade_id}" in book["tag_paths"][0]:
+                        preview_url = list(book["custom_properties"]["preview"].items())[0][-1]
+                        # 取zh-CN和transcode之间的number
+                        start_index = preview_url.find("zh-CN/") + len("zh-CN/")
+                        end_index = preview_url.find("/transcode")
                         book_data = {
                             "name": book["title"],
-                            "content_id": book["id"]
+                            "content_id": book["id"],
+                            "number": preview_url[start_index:end_index]
                         }
                         books.append(book_data)
                         logger.success(f"匹配到课本 {book_data['name']}，ID: {book["id"]}")
@@ -76,10 +81,6 @@ for period in periods[:-2]: # 不处理高中和特殊教育的数据
         filename = "primary.json"
     elif name == "初中":
         filename = "junior.json"
-    elif name == "小学（五·四制）":
-        filename = "primary_54.json"
-    elif name == "初中（五·四制）":
-        filename = "junior_54.json"
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(final_data, f, ensure_ascii=False, indent=4)
     logger.success(f"已写入文件 {filename}")

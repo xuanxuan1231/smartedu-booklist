@@ -24,7 +24,7 @@ logger.success("获取课本数据")
 
 periods = data["hierarchies"][0]["children"][0]["hierarchies"][0]["children"]
 
-for period in periods[:-4]: # 不处理高中和特殊教育的数据
+for period in periods[:-2]: # 不处理高中和特殊教育的数据
     name = period["tag_name"]
     period_id = period["tag_id"]
     logger.debug(f"正在遍历学段 {name}。ID: {period_id}")
@@ -93,14 +93,16 @@ for period in periods[:-4]: # 不处理高中和特殊教育的数据
     }
     #print(final_data)
     #break
-    if name == "小学":
-        filename = "primary.json"
-    elif name == "小学（五·四学制）":
+    if name == "小学（五•四学制）":
         filename = "primary54.json"
+    elif name == "初中（五•四学制）":
+        filename = "junior54.json"
+    elif name == "小学":
+        filename = "primary.json"
     elif name == "初中":
         filename = "junior.json"
-    elif name == "初中（五·四学制）":
-        filename = "junior54.json"
+    else:
+        continue
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(final_data, f, ensure_ascii=False, indent=4)
     logger.success(f"已写入文件 {filename}")

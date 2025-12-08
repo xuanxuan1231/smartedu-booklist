@@ -5,18 +5,31 @@
 import requests, json
 from datetime import datetime
 from loguru import logger
+import dns.resolver
 
 logger.add("logs/{time}.log")
 
-FILE_SERVER = "1"
+resolver = dns.resolver.Resolver(configure=False)
+resolver.nameservers = ["1.1.1.1", "1.0.0.1", "223.5.5.5"]
 
-data = requests.get(f"https://s-file-{FILE_SERVER}.ykt.cbern.com.cn/zxx/ndrs/tags/tch_material_tag.json").json()
+FILE_SERVER = "1"
+DOMAIN = f"s-file-{FILE_SERVER}.ykt.cbern.com.cn"
+IP = resolver.resolve(DOMAIN, "A", lifetime=15.0)[0]
+logger.success(f"DNS 解析完成。IP：{IP}")
+
+data = requests.get(
+    f"https://{IP}/zxx/ndrs/tags/tch_material_tag.json",
+    headers={"Host": DOMAIN},
+    verify=False
+    ).json()
 logger.success("获取分类数据")
 
 tag_data = []
 for part in range(100, 104):
     tag_data += requests.get(
-        f"https://s-file-{FILE_SERVER}.ykt.cbern.com.cn/zxx/ndrs/resources/tch_material/part_{part}.json"
+        f"https://{IP}/zxx/ndrs/resources/tch_material/part_{part}.json",
+        headers={"Host": DOMAIN},
+        verify=False
     ).json()
     logger.debug(f"获取课本数据分片 {part%100}")
 # tag_data = tag_data[:-10] # 把教师用书的视频扔了 当我他妈没说 什么狗屎排序

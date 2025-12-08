@@ -1,5 +1,6 @@
 certifi==2025.11.12
 charset-normalizer==3.4.4
+dnspython==2.8.0
 idna==3.11
 loguru==0.7.3
 requests==2.32.5

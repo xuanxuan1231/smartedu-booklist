@@ -1,8 +1,6 @@
 name: Daily Update List
 
 on:
-  schedule:
-    - cron: '0 0 * * *' # 每天 UTC 00:00 运行
   workflow_dispatch:
 
 permissions:
@@ -21,7 +19,7 @@ jobs:
           python-version: 3.12
           activate-environment: true
 
-      - name: Install dependencies (if any)
+      - name: Install dependencies
         run: uv pip install -r requirements.txt
 
       - name: Run main.py

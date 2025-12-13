@@ -74,24 +74,19 @@ for period in periods[:-2]: # 不处理高中和特殊教育的数据
                     if book["tag_paths"] == []:
                         continue
                     if f"{period_id}/{subject_id}/{version_id}/{grade_id}" in book["tag_paths"][0]:
-                        if "preview" in book["custom_properties"].keys():
-                            preview_url = list(book["custom_properties"]["preview"].items())[0][-1]
-                        elif "thumbnails" in book["custom_properties"].keys():
-                            # 为什么还有他妈thumbnails啊
-                            preview_url = book["custom_properties"]["thumbnails"][0]
-                            if "zh-CN/" not in preview_url:
-                                # 去死吧为什么thumbnail还有不一样的
-                                continue
-                        else:
-                            # 俩都没有那就去死吧
-                            continue
-                        # 取zh-CN和transcode之间的number
-                        start_index = preview_url.find("zh-CN/") + len("zh-CN/")
-                        end_index = preview_url.find("/transcode")
+                        ti_response = requests.get(
+                            f"https://{IP}/zxx/ndrv2/resources/tch_material/details/{book["id"]}.json",
+                            headers={"Host": DOMAIN},
+                            verify=False
+                        ).json()
+                        for ti in ti_response["ti_items"]:
+                            if ti["ti_storage"].endswith(".pdf"):
+                                path = ti["ti_storage"].replace("cs_path:${ref-path}", "")
+                                break
                         book_data = {
                             "name": book["title"],
                             "content_id": book["id"],
-                            "number": preview_url[start_index:end_index]
+                            "path": path
                         }
                         books.append(book_data)
                         logger.success(f"匹配到课本 {book_data['name']}，ID: {book["id"]}")

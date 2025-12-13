@@ -74,20 +74,27 @@ for period in periods[:-2]: # 不处理高中和特殊教育的数据
                     if book["tag_paths"] == []:
                         continue
                     if f"{period_id}/{subject_id}/{version_id}/{grade_id}" in book["tag_paths"][0]:
-                        ti_response = requests.get(
-                            f"https://{IP}/zxx/ndrv2/resources/tch_material/details/{book["id"]}.json",
-                            headers={"Host": DOMAIN},
-                            verify=False
-                        ).json()
-                        for ti in ti_response["ti_items"]:
-                            if ti["ti_storage"].endswith(".pdf"):
-                                path = ti["ti_storage"].replace("cs_path:${ref-path}", "")
-                                break
-                        book_data = {
-                            "name": book["title"],
-                            "content_id": book["id"],
-                            "path": path
-                        }
+                        try:
+                            ti_response = requests.get(
+                                f"https://{IP}/zxx/ndrv2/resources/tch_material/details/{book["id"]}.json",
+                                headers={"Host": DOMAIN},
+                                verify=False
+                            ).json()
+                            for ti in ti_response["ti_items"]:
+                                if ti["ti_storage"].endswith(".pdf"):
+                                    path = ti["ti_storage"].replace("cs_path:${ref-path}", "")
+                                    break
+                            book_data = {
+                                "name": book["title"],
+                                "content_id": book["id"],
+                                "path": path
+                            }
+                        except:
+                            book_data = {
+                                "name": book["title"],
+                                "content_id": book["id"],
+                                "path": f"{book["id"]}: Failed to fetch path"
+                            }
                         books.append(book_data)
                         logger.success(f"匹配到课本 {book_data['name']}，ID: {book["id"]}")
                     #logger.warning(f"课本 ID 是 {book["id"]}。当前正在遍历的课本 ID 是 {book['tag_paths'][0]}")

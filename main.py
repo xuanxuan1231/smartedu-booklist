@@ -37,43 +37,60 @@ logger.success("获取课本数据")
 
 periods = data["hierarchies"][0]["children"][0]["hierarchies"][0]["children"]
 
-for period in periods[:-2]: # 不处理高中和特殊教育的数据
+for period in periods[:-1]: # 不处理特殊教育的数据
     name = period["tag_name"]
     period_id = period["tag_id"]
     logger.debug(f"正在遍历学段 {name}。ID: {period_id}")
     subjects = []
-    for subject in period["hierarchies"][0]["children"]:
+
+    origindata_subjects = period["hierarchies"][0]["children"]
+    for subject in origindata_subjects:
         subject_data = {
             "name": subject["tag_name"],
             "versions": []
         }
         subject_id = subject["tag_id"]
         logger.debug(f"正在遍历学科 {subject_data['name']}。ID: {subject_id}")
-        if subject_data['name'] == "信息科技": 
-            # 信息科技没有“版本” 后面再写
-            logger.info("跳过 信息科技 学科")
-            continue
-        for version in subject["hierarchies"][0]["children"]:
+        
+        origindata_versions = subject["hierarchies"][0]["children"]
+        # 没有版本 造个版本嘛
+        if subject["hierarchies"][0]["hierarchy_name"] == "年级":
+            # 创建形式版本 全部
+            origindata_versions = [{"tag_id": "", "tag_name": "全部", "hierarchies": subject["hierarchies"]}]
+        for version in origindata_versions:
             version_data = {
                 "name": version["tag_name"],
                 "grades": []
             }
             version_id = version["tag_id"]
-            logger.debug(f"正在遍历版本 {version_data['name']}。ID: {version_id}")
-            for grade in version["hierarchies"][0]["children"]:
+            if version_id == "":
+                logger.debug(f"正在遍历形式版本 全部。没有 ID。")
+            else:
+                logger.debug(f"正在遍历版本 {version_data['name']}。ID: {version_id}")
+            
+            origindata_grades = version["hierarchies"][0]["children"]
+            # 没有年级？那就造个年级！
+            if version["hierarchies"][0]["children"] == []:
+                # 创建形式年级 全部
+                origindata_grades = [{"tag_id": "", "tag_name": "全部"}]
+            for grade in origindata_grades:
                 grade_data = {
                     "name": grade["tag_name"],
                     "books": []
                 }
                 grade_id = grade["tag_id"]
-                logger.debug(f"正在遍历年级 {grade_data['name']}。ID: {grade_id}")
+                if grade_id == "":
+                    logger.debug(f"正在遍历形式年级 全部。没有 ID。")
+                else:
+                    logger.debug(f"正在遍历年级 {grade_data['name']}。ID: {grade_id}")
                 books = []
                 for book in tag_data:
                     if "tag_paths" not in book.keys():
                         continue
                     if book["tag_paths"] == []:
                         continue
-                    if f"{period_id}/{subject_id}/{version_id}/{grade_id}" in book["tag_paths"][0]:
+                    # 更傻福的判断
+                    if f"{period_id}/{subject_id}{("/" + version_id) if version_id != "" else ""}{("/" + grade_id) if grade_id != "" else ""}" in book["tag_paths"][0]:
                         try:
                             ti_response = requests.get(
                                 f"https://{IP}/zxx/ndrv2/resources/tch_material/details/{book["id"]}.json",
@@ -116,9 +133,10 @@ for period in periods[:-2]: # 不处理高中和特殊教育的数据
         filename = "primary.json"
     elif name == "初中":
         filename = "junior.json"
+    elif name == "高中":
+        filename = "senior.json"
     else:
         continue
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(final_data, f, ensure_ascii=False, indent=4)
     logger.success(f"已写入文件 {filename}")
-

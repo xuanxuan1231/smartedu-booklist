@@ -36,7 +36,7 @@ for part in range(100, 104):
 logger.success("获取课本数据")
 
 periods = data["hierarchies"][0]["children"][0]["hierarchies"][0]["children"]
-"""
+
 for period in periods[:-1]: # 不处理特殊教育的数据
     name = period["tag_name"]
     period_id = period["tag_id"]
@@ -140,9 +140,9 @@ for period in periods[:-1]: # 不处理特殊教育的数据
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(final_data, f, ensure_ascii=False, indent=4)
     logger.success(f"已写入文件 {filename}")
-    """
 
-for category in periods[-1]["hierarchies"][0]["children"]:
+
+for category in periods[-1]["hierarchies"][0]["children"]: # 处理特殊教育的数据
     name = category["tag_name"]
     category_id = category["tag_id"]
     logger.debug(f"正在遍历特殊教育类别 {name}。ID: {category_id}")
@@ -178,7 +178,7 @@ for category in periods[-1]["hierarchies"][0]["children"]:
                 origindata_grades = [{"tag_id": "", "tag_name": "全部", "hierarchies": subject["hierarchies"]}]
             for grade in origindata_grades:
                 grade_data = {
-                    "name": subject["tag_name"],
+                    "name": grade["tag_name"],
                     "volumes": []
                 }
                 grade_id = grade["tag_id"]
@@ -208,7 +208,7 @@ for category in periods[-1]["hierarchies"][0]["children"]:
                         if book["tag_paths"] == []:
                             continue
                         # 更傻福的判断
-                        if f"{category_id}/{period_id}{subject_id}{("/" + grade_id) if grade_id != "" else ""}{("/" + volume_id) if volume_id != "" else ""}" in book["tag_paths"][0]:
+                        if f"{category_id}{("/" + period_id) if period_id != "" else ""}/{subject_id}{("/" + grade_id) if grade_id != "" else ""}{("/" + volume_id) if volume_id != "" else ""}" in book["tag_paths"][0]:
                             try:
                                 ti_response = requests.get(
                                     f"https://{IP}/zxx/ndrv2/resources/tch_material/details/{book["id"]}.json",

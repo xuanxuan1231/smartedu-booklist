@@ -138,7 +138,7 @@ for period in periods[:-1]: # 不处理特殊教育的数据
     else:
         continue
     with open(filename, "w", encoding="utf-8") as f:
-        json.dump(final_data, f, ensure_ascii=False, indent=4)
+        json.dump(final_data, f, ensure_ascii=False, separators=(',', ':'))
     logger.success(f"已写入文件 {filename}")
 
 categories = []
@@ -246,6 +246,6 @@ final_data = {
 }
 filename = "special.json"
 with open(filename, "w", encoding="utf-8") as f:
-    json.dump(final_data, f, ensure_ascii=False, indent=4)
+    json.dump(final_data, f, ensure_ascii=False, separators=(',', ':'))
 logger.success(f"已写入文件 {filename}")
             
